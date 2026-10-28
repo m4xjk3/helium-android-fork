@@ -55,7 +55,7 @@ try {
 }
 
 $url = "https://github.com/$owner/$Repo.git"
-if (git remote get-url origin 2>$null) {
+if ((git remote) -contains "origin") {
     git remote set-url origin $url
 } else {
     git remote add origin $url

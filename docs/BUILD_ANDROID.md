@@ -59,8 +59,8 @@ Linux/macOS: `GITHUB_TOKEN=ghp_... ./scripts/publish.sh --public`.
 После публикации клонируй уже с подмодулем:
 
 ```bash
-git clone --recurse-submodules https://github.com/<твой-логин>/helium-android.git
-cd helium-android
+git clone --recurse-submodules https://github.com/m4xjk3/helium-android-fork.git
+cd helium-android-fork
 ```
 
 Проверь, что подмодуль на месте:
@@ -101,6 +101,9 @@ Windows PowerShell:
 
 `LOCAL_TEST_JKS` — это base64 от `local.properties`, `STORE_TEST_JKS` — base64
 от `helium.jks` (имена исторические, не путай).
+
+В опубликованном репозитории `m4xjk3/helium-android-fork` оба секрета уже
+добавлены, ключ лежит локально в `keys/` (каталог в `.gitignore`).
 
 ```bash
 gh secret set LOCAL_TEST_JKS   < local.properties.b64

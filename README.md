@@ -36,18 +36,16 @@ Requirements, signing, secrets and the GitHub Actions workflow are described in
 [`docs/BUILD_ANDROID.md`](docs/BUILD_ANDROID.md) (in Russian). Pinned component
 versions are listed in [`docs/VERSIONS.md`](docs/VERSIONS.md).
 
-Short version — publish this repo, then clone it with submodules:
-
-```powershell
-$env:GITHUB_TOKEN = "ghp_..."   # repo scope
-./scripts/publish.ps1 -Public
-```
+Clone with submodules and run the **Build** workflow:
 
 ```bash
-git clone --recurse-submodules https://github.com/<you>/helium-android.git
-cd helium-android
-# add signing secrets, then run the "Build" workflow
+git clone --recurse-submodules https://github.com/m4xjk3/helium-android-fork.git
+cd helium-android-fork
 ```
+
+Signing secrets are already configured in the published repository. A real build
+needs a self-hosted runner (or a larger hosted runner) with 100+ GB of free disk;
+`ubuntu-latest` is not enough for Chromium.
 
 Build output: `out/release/<version>-arm64-v8a.apk`, `...-armeabi-v7a.apk`,
 `...-arm64-v8a.aab`.

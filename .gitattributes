@@ -1,0 +1,8 @@
+# Line endings: the build runs on Linux, so shell/GN files must stay LF even
+# when the repo is cloned on Windows.
+* text=auto
+*.sh text eol=lf
+*.py text eol=lf
+*.gn text eol=lf
+*.gni text eol=lf
+*.gclient text eol=lf

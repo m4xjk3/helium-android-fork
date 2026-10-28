@@ -1,0 +1,111 @@
+name: Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: 'Runner label (self-hosted, ubuntu-latest, ubuntu-latest-16-cores, ...)'
+        required: true
+        type: string
+        default: 'self-hosted'
+      update_vanadium:
+        description: 'Update the Vanadium submodule to the latest tag before building'
+        required: false
+        type: boolean
+        default: false
+      release:
+        description: 'Create a GitHub release with the built APK/AAB'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 720
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - name: Update Vanadium
+        if: ${{ inputs.update_vanadium }}
+        run: |
+          cd vanadium
+          git fetch --tags
+          git checkout "$(git tag | sort -V | tail -n1)"
+          git log -1 --oneline
+
+      # GitHub-hosted runners ship with a small disk. This reclaims ~30 GB.
+      # A full Chromium checkout + build still needs well over 60 GB, so prefer
+      # a self-hosted runner or a larger hosted runner for real builds.
+      - name: Free disk space
+        if: ${{ !startsWith(inputs.runner, 'self-hosted') }}
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
+      - name: Set ENV
+        run: |
+          chmod +x *.sh
+          echo "unix_time=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Build
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          LOCAL_TEST_JKS: ${{ secrets.LOCAL_TEST_JKS }}
+          STORE_TEST_JKS: ${{ secrets.STORE_TEST_JKS }}
+        run: ./build.sh
+
+      - name: Collect artifacts
+        run: |
+          VERSION=$(find chromium/src/out/release -name '*arm64-v8a.apk' | sed 's/.*\///;s/\-arm64-v8a.apk$//')
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          mv "$(find chromium/src/out/release -name '*arm64-v8a.aab')" "$VERSION-${{ env.unix_time }}-arm64-v8a.aab"
+          mv "$(find chromium/src/out/release -name '*arm64-v8a.apk')" "$VERSION-${{ env.unix_time }}-arm64-v8a.apk"
+          mv "$(find chromium/src/out/release -name '*armeabi-v7a.apk')" "$VERSION-${{ env.unix_time }}-armeabi-v7a.apk"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: helium-android-${{ env.VERSION }}-${{ env.unix_time }}
+          path: |
+            ${{ env.VERSION }}-${{ env.unix_time }}-arm64-v8a.aab
+            ${{ env.VERSION }}-${{ env.unix_time }}-arm64-v8a.apk
+            ${{ env.VERSION }}-${{ env.unix_time }}-armeabi-v7a.apk
+          if-no-files-found: error
+
+      - name: Publish
+        if: ${{ inputs.release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: v${{ env.VERSION }}
+          tag_name: v${{ env.VERSION }}-${{ env.unix_time }}
+          files: |
+            ${{ env.VERSION }}-${{ env.unix_time }}-arm64-v8a.aab
+            ${{ env.VERSION }}-${{ env.unix_time }}-arm64-v8a.apk
+            ${{ env.VERSION }}-${{ env.unix_time }}-armeabi-v7a.apk
+
+      - name: Attest
+        if: ${{ inputs.release }}
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            ${{ env.VERSION }}-${{ env.unix_time }}-arm64-v8a.aab
+            ${{ env.VERSION }}-${{ env.unix_time }}-arm64-v8a.apk
+            ${{ env.VERSION }}-${{ env.unix_time }}-armeabi-v7a.apk

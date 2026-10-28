@@ -32,6 +32,11 @@ replace "$SCRIPT_DIR/vanadium/patches" "Vanadium" "Titanium"
 replace "$SCRIPT_DIR/vanadium/patches" "vanadium" "titanium"
 git am --whitespace=nowarn --keep-non-patch $SCRIPT_DIR/vanadium/patches/*.patch
 
+# Git 2.56 writes "Applying: ..." to stderr, but this Vanadium helper reads it
+# from stdout and crashes on an empty list. Fall back to the patch file name.
+sed -i "s|git_am_patch_msg = git_am_stdout_lines\[0\].replace('Applying: ', '')|git_am_patch_msg = git_am_stdout_lines[0].replace('Applying: ', '') if git_am_stdout_lines else patches_path.stem|" \
+    $SCRIPT_DIR/vanadium/tools/common/apply_subprojects_patches.py
+
 gclient sync -D --no-history --nohooks
 gclient runhooks
 ./build/install-build-deps.sh --no-prompt

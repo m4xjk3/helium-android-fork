@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 source common.sh
 export VERSION=$(grep -m1 -o '[0-9]\+\(\.[0-9]\+\)\{3\}' vanadium/args.gn)
 export CHROMIUM_SOURCE=https://chromium.googlesource.com/chromium/src.git # https://github.com/chromium/chromium.git
@@ -12,6 +13,8 @@ git clone --depth 1 https://chromium.googlesource.com/chromium/tools/depot_tools
 export PATH="$PWD/depot_tools:$PATH"
 mkdir -p chromium/src/out/Default; cd chromium/src
 git init
+git config user.name "Helium Android"
+git config user.email "helium-android@users.noreply.github.com"
 git remote add origin $CHROMIUM_SOURCE
 git fetch --depth 1 $CHROMIUM_SOURCE +refs/tags/$VERSION:chromium_$VERSION
 git checkout $VERSION

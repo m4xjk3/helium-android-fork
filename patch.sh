@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mkdir -p chrome/android/java/res_titanium_base
+mkdir -p chrome/android/java/res_titanium_base/drawable
 cp $SCRIPT_DIR/res/drawable/themed_app_icon.xml chrome/android/java/res_titanium_base/drawable/themed_app_icon.xml
 for icon in $(find chrome/android/java/res_titanium_base -type f -name '*.png'); do sh $SCRIPT_DIR/res/icon.sh "$icon"; done
 
